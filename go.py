@@ -15,20 +15,6 @@ def print_board(board):
         print("\n")
 
 
-"""
-def check_boundaries(board):
-    print("Checking boundaries")
-    for row in range(19):
-        for col in range(19):
-            if type(board[row][col]) is Stone:
-                visited = [(row,col)]
-                input("Next src: %d %d" % (row, col))
-                is_free(row, col, board, visited)
-                for stone in visited:
-                    print(stone)
-"""
-
-
 def on_board(pos):
     return 0 <= pos[0] <= 18 and 0 <= pos[1] <= 18
 
@@ -79,20 +65,6 @@ def check_liberties(pos, board, stones_played_list):
     return num_removed
 
 
-"""
-    visited = [(row, col)]
-    num_edges = is_free(row, col, board, visited)
-    num_liberties = 0
-    for (row, col) in visited:
-        num_liberties += board[row][col].num_liberties
-    num_liberties -= num_edges
-    if num_edges == 0:
-        print("Captured")
-    else:
-        print("Not Captured")
-"""
-
-
 def is_free(pos, board, visited):
     has_liberties = False
     # print("New call")
@@ -122,48 +94,6 @@ def is_free(pos, board, visited):
                 break
 
     return has_liberties
-
-
-"""
-def is_free(row, col, board, visited):
-    has_liberties = False
-    #print("New call")
-    #print("visited = ", visited)
-    if has_liberties == False:
-        if row + 1 <= 18 and (row + 1, col) not in visited:
-            if type(board[row + 1][col]) is Stone:
-                if same_colour(board[row + 1][col], board[row][col]):
-                    visited.append((row + 1, col)) 
-                    #input("pos: %d %d" % (row + 1, col))
-                    has_liberties = is_free(row + 1, col, board, visited)
-            else:
-                has_liberties = True
-        if row - 1 >= 0 and (row - 1, col) not in visited:
-            if type(board[row - 1][col]) is Stone:
-                if same_colour(board[row - 1][col], board[row][col]):
-                    visited.append((row - 1, col)) 
-                    #input("pos: %d %d" % (row - 1, col))
-                    has_liberties = is_free(row - 1, col, board, visited)
-            else:
-                has_liberties = True
-        if col + 1 <= 18 and (row, col + 1) not in visited:
-            if type(board[row][col + 1]) is Stone:
-                if same_colour(board[row][col + 1], board[row][col]):
-                    visited.append((row, col + 1))
-                    #input("pos: %d %d" % (row, col + 1))
-                    has_liberties = is_free(row, col + 1, board, visited)
-            else:
-                has_liberties = True
-        if col - 1 >= 0 and (row, col - 1) not in visited:
-            if type(board[row][col - 1]) is Stone:
-                if same_colour(board[row][col - 1], board[row][col]):
-                    visited.append((row, col - 1))
-                    #input("pos: %d %d" % (row, col - 1))
-                    has_liberties = is_free(row, col - 1, board, visited)
-            else:
-                has_liberties = True
-    return has_liberties
-"""
 
 
 def num_strings(text):
@@ -263,10 +193,6 @@ class Player(object):
             # print("Checking white liberties")
             for pos in white_stones_played_iter:
                 Player.black_num_stones_capt += check_liberties(pos, board, Player.white_stones_played)
-
-
-# print("white stones = ", Player.white_stones_played)
-# print("black stones = ", Player.black_stones_played)
 
 
 black = Player("black")
