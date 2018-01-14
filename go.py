@@ -11,10 +11,7 @@ def print_board(board):
     print("\n\n\n")
     for i in range(len(board)):
         for j in range(len(board[0])):
-            if type(board[i][j]) is Stone:
-                print("{:<4}".format(board[i][j].symbol), end="")
-            else:
-                print("{:<4}".format(board[i][j]), end="")
+            print("{:<4}".format(board[i][j]), end="")
         print("\n")
 
 
@@ -38,17 +35,17 @@ def on_board(pos):
 
 def is_stone(pos, board):
     assert on_board(pos)
-    return type(board[pos[0]][pos[1]]) is Stone
+    return board[pos[0]][pos[1]] == "@" or board[pos[0]][pos[1]] == "O"
 
 
 def same_colour(pos1, pos2, board):
     assert is_stone(pos1, board), "pos1 is not a valid stone"
     assert is_stone(pos2, board), "pos2 is not a valid stone"
-    return board[pos1[0]][pos1[1]].symbol == board[pos2[0]][pos2[1]].symbol
+    return board[pos1[0]][pos1[1]] == board[pos2[0]][pos2[1]]
 
 
 def remove_stones(coordinate_list, board, stones_played_list):
-    #TODO: fix stones_played_list
+    # TODO: fix stones_played_list
     for (row, col) in coordinate_list:
         # indicate the current round's captured stones with '.'
         board[row][col] = "."
@@ -67,17 +64,18 @@ def remove_capture_indicators(board):
 # TODO: Add visited to parent function of check liberties
 # TODO: Edit, cannot do above since need new visited list containing objects to delete every new call to function.
 # TODO: Check stones_played_list
-def check_liberties(row, col, board, stones_played_list):
+def check_liberties(pos, board, stones_played_list):
+    assert on_board(pos) is True, "Position does not lie on the board"
     # print("New src = %d %d" % (row, col))
-    if is_stone((row, col), board) is False:
+    if is_stone(pos, board) is False:
         return 0
     # TODO: change assignment operator to .append
-    visited = [(row, col)]
-    has_liberties = is_free(row, col, board, visited)
+    visited = [pos]
+    has_liberties = is_free(pos, board, visited)
     # print("is_free = %s" % str(has_liberties))
     # print("visited =", visited)
     num_removed = 0
-    if has_liberties == False:
+    if has_liberties is False:
         # print("is_free must be false: is_free = %s" % str(has_liberties))
         num_removed = remove_stones(visited, board, stones_played_list)
     # print("Num removed == %d" % num_removed)
@@ -98,30 +96,31 @@ def check_liberties(row, col, board, stones_played_list):
 """
 
 
-def is_free(row, col, board, visited):
+def is_free(pos, board, visited):
     has_liberties = False
     # print("New call")
     # print("visited = ", visited)
-    pos_above = (row - 1, col)
-    pos_below = (row + 1, col)
-    pos_left = (row, col - 1)
-    pos_right = (row, col + 1)
+    pos_above = (pos[0] - 1, pos[1])
+    pos_below = (pos[0] + 1, pos[1])
+    pos_left = (pos[0], pos[1] - 1)
+    pos_right = (pos[0], pos[1] + 1)
     positions = [pos_above, pos_below, pos_left, pos_right]
+    positions_iter = list(positions)
 
     # remove positions not on board, i.e. all pos in list positions will be valid thereafter
-    for pos in positions:
-        if on_board(pos) is False:
-            positions.remove(pos)
-        elif is_stone(pos, board) is False:
+    for adj_pos in positions_iter:
+        if on_board(adj_pos) is False:
+            positions.remove(adj_pos)
+        elif is_stone(adj_pos, board) is False:
             # if pos is on the board and does not hold stone then it is a liberty
             has_liberties = True
             return has_liberties
 
-    for pos in positions:
-        if same_colour((row, col), pos, board) and pos not in visited:
-            visited.append(pos)
+    for adj_pos in positions:
+        if same_colour(pos, adj_pos, board) and adj_pos not in visited:
+            visited.append(adj_pos)
             # input("pos: %d %d" % (row - 1, col))
-            has_liberties = is_free(pos[0], pos[1], board, visited)
+            has_liberties = is_free(adj_pos, board, visited)
             if has_liberties is True:
                 break
 
@@ -170,17 +169,34 @@ def is_free(row, col, board, visited):
 """
 
 
-class Stone(object):
-    def __init__(self, symbol):
-        self.symbol = symbol
+def num_strings(text):
+    num_spaces = 0
+    for letter in text:
+        if letter == " ":
+            num_spaces += 1
+
+    return num_spaces + 1
 
 
-def create_stone_list(num_stones, symbol):
-    stones = []
-    for i in range(num_stones):
-        stone = Stone(str(symbol))
-        stones.append(stone)
-    return stones
+# noinspection PyBroadException
+def is_int(string):
+    try:
+        int(string)
+    except:
+        return False
+    return True
+
+
+def is_valid_coordinates(text):
+    if num_strings(text) != 2:
+        return False
+
+    strings = text.split()
+    for string in strings:
+        if is_int(string) is False:
+            return False
+
+    return True
 
 
 class Player(object):
@@ -188,68 +204,68 @@ class Player(object):
     black_stones_played = []
     white_stones_left = 180
     black_stones_left = 181
+    white_num_stones_capt = 0
+    black_num_stones_capt = 0
 
-    def __init__(self, name):
-        self.stones_capt = 0
-        self.colour = name
-        self.stones = []
+    def __init__(self, colour):
+        self.colour = colour
         if self.colour == "black":
-            self.stones = create_stone_list(181, "@")
+            self.symbol = "@"
         else:
-            self.stones = create_stone_list(180, "O")
+            self.symbol = "O"
 
-    def show_captured(self):
-        print(self.stones_capt)
+    def show_num_captured(self):
+        if self.colour == "black":
+            print(Player.black_num_stones_capt)
+        else:
+            print(Player.white_num_stones_capt)
 
     def make_move(self, board):
         user_input = input("Ok, %s, place your stone.\n" % self.colour)
-        if user_input.lower().find("pass") >= 0:
-            return
-        coordinates = user_input.split()
-        # print("user_input = \"%s\"" % user_input)
-        # print("coordinates = %s\n" % coordinates)
-        row = int(coordinates[0])
-        col = int(coordinates[1])
         while True:
-            if row > 18 or row < 0 or col > 18 or col < 0:
-                user_input = input("Invalid position, try again.\n")
+            if user_input.lower().find("pass") >= 0:
+                return
+            elif is_valid_coordinates(user_input):
                 coordinates = user_input.split()
+                # print("user_input = \"%s\"" % user_input)
+                # print("coordinates = %s\n" % coordinates)
                 row = int(coordinates[0])
                 col = int(coordinates[1])
-            elif type(board[row][col]) is Stone:
-                user_input = input("Position occupied, try again.\n")
-                coordinates = user_input.split()
-                row = int(coordinates[0])
-                col = int(coordinates[1])
+                if row > 18 or row < 0 or col > 18 or col < 0:
+                    user_input = input("Invalid position, try again.\n")
+                    continue
+                elif is_stone((row, col), board) is True:
+                    user_input = input("Position occupied, try again.\n")
+                    continue
+                else:
+                    break
             else:
-                board[row][col] = self.stones.pop(0)
-                board[row][col].set_liberties(row, col)
-                if self.colour == "black":
-                    Player.black_stones_played.append((row, col))
-                else:
-                    Player.white_stones_played.append((row, col))
-                print(board[row][col].num_liberties)
-                if self.colour == "black":
-                    Player.black_stones_left -= 1
-                else:
-                    Player.white_stones_left -= 1
-                break
-        remove_capture_indicators(board)
-        # print("Check")
+                user_input = input("Please input 'pass' or TWO numbers: row col\n")
+
+        board[row][col] = self.symbol
+        white_stones_played_iter = list(Player.white_stones_played)
+        black_stones_played_iter = list(Player.black_stones_played)
         if self.colour == "black":
+            Player.black_stones_played.append((row, col))
+            Player.black_stones_left -= 1
             # print("Checking white liberties")
-            for (row, col) in Player.white_stones_played:
-                self.stones_capt += check_liberties(row, col, board, Player.white_stones_played)
+            for pos in white_stones_played_iter:
+                Player.black_num_stones_capt += check_liberties(pos, board, Player.white_stones_played)
             # print("Checking black liberties")
-            for (row, col) in Player.black_stones_played:
-                self.stones_capt += check_liberties(row, col, board, Player.black_stones_played)
+            for pos in black_stones_played_iter:
+                Player.white_num_stones_capt += check_liberties(pos, board, Player.black_stones_played)
         else:
+            Player.white_stones_played.append((row, col))
+            Player.white_stones_left -= 1
+
             # print("Checking black liberties")
-            for (row, col) in Player.black_stones_played:
-                self.stones_capt += check_liberties(row, col, board, Player.black_stones_played)
+            for pos in black_stones_played_iter:
+                Player.white_num_stones_capt += check_liberties(pos, board, Player.black_stones_played)
             # print("Checking white liberties")
-            for (row, col) in Player.white_stones_played:
-                self.stones_capt += check_liberties(row, col, board, Player.white_stones_played)
+            for pos in white_stones_played_iter:
+                Player.black_num_stones_capt += check_liberties(pos, board, Player.white_stones_played)
+
+
 # print("white stones = ", Player.white_stones_played)
 # print("black stones = ", Player.black_stones_played)
 
@@ -263,31 +279,38 @@ print("Hello! Welcome to Go! Please start now.")
 while black.black_stones_left > 0 and white.white_stones_left > 0:
     if __debug__:
         print_board(game_board)
-    print("Player 1's turn. (%d stones left, %d stone(s) captured)" % (black.black_stones_left, black.stones_capt))
+    remove_capture_indicators(game_board)
+    print("Player 1's turn. (%d stones left, %d stone(s) captured)" % (black.black_stones_left, black.black_num_stones_capt))
     black.make_move(game_board)
     if __debug__:
         print_board(game_board)
-    print("Player 2's turn. (%d stones left, %d stone(s) captured)" % (white.white_stones_left, white.stones_capt))
+    remove_capture_indicators(game_board)
+    print("Player 2's turn. (%d stones left, %d stone(s) captured)" % (white.white_stones_left, white.white_num_stones_capt))
     white.make_move(game_board)
+
 
 while black.black_stones_left > 0:
     if __debug__:
         print_board(game_board)
-    print("Player 1's turn. (%d stones left, %d stone(s) captured)" % (black.black_stones_left, black.stones_capt))
+    remove_capture_indicators(game_board)
+    print("Player 1's turn. (%d stones left, %d stone(s) captured)" % (black.black_stones_left, black.black_num_stones_capt))
     black.make_move(game_board)
+
 
 while white.white_stones_left > 0:
     if __debug__:
         print_board(game_board)
-    print("Player 2's turn. (%d stones left, %d stone(s) captured)" % (white.white_stones_left, white.stones_capt))
+    remove_capture_indicators(game_board)
+    print("Player 2's turn. (%d stones left, %d stone(s) captured)" % (white.white_stones_left, white.white_num_stones_capt))
     white.make_move(game_board)
+
 
 if __debug__:
     print_board(game_board)
 
-if black.stones_capt == white.stones_capt:
+if black.black_num_stones_capt == white.white_num_stones_capt:
     print("Congratulations, you have tied")
-elif black.stones_capt > white.stones_capt:
+elif black.black_num_stones_capt > white.white_num_stones_capt:
     print("Congratulations %s, you won!" % "PLayer 1")
 else:
     print("Congratulations %s, you won!" % "Player 2")
