@@ -1,10 +1,10 @@
 # extra row for x-axis coordinates
-board = [["+" for x in range(20)] for y in range(20)]
-for i in range(len(board) - 1):
-    board[i][19] = i
-for i in range(len(board[0]) - 1):
-    board[19][i] = i
-board[19][19] = ""
+game_board = [["+" for x in range(20)] for y in range(20)]
+for i in range(len(game_board) - 1):
+    game_board[i][19] = i
+for i in range(len(game_board[0]) - 1):
+    game_board[19][i] = i
+game_board[19][19] = ""
 
 
 def print_board(board):
@@ -33,20 +33,24 @@ def check_boundaries(board):
 
 
 def on_board(pos):
-    return pos[0] >= 0 and pos[0] <= 18 and pos[1] >= 0 and pos[1] <= 18
+    return 0 <= pos[0] <= 18 and 0 <= pos[1] <= 18
 
 
 def is_stone(pos, board):
-    return board[pos[0]][pos[1]] != "+"
+    assert on_board(pos)
+    return type(board[pos[0]][pos[1]]) is Stone
 
 
 def same_colour(pos1, pos2, board):
+    assert is_stone(pos1, board), "pos1 is not a valid stone"
+    assert is_stone(pos2, board), "pos2 is not a valid stone"
     return board[pos1[0]][pos1[1]].symbol == board[pos2[0]][pos2[1]].symbol
 
 
 def remove_stones(coordinate_list, board, stones_played_list):
+    #TODO: fix stones_played_list
     for (row, col) in coordinate_list:
-        # indicate the current round's captured stones with .
+        # indicate the current round's captured stones with '.'
         board[row][col] = "."
         stones_played_list.remove((row, col))
     return len(coordinate_list)
@@ -60,10 +64,14 @@ def remove_capture_indicators(board):
                 board[i][j] = "+"
 
 
+# TODO: Add visited to parent function of check liberties
+# TODO: Edit, cannot do above since need new visited list containing objects to delete every new call to function.
+# TODO: Check stones_played_list
 def check_liberties(row, col, board, stones_played_list):
     # print("New src = %d %d" % (row, col))
-    if is_stone((row, col), board) == False:
+    if is_stone((row, col), board) is False:
         return 0
+    # TODO: change assignment operator to .append
     visited = [(row, col)]
     has_liberties = is_free(row, col, board, visited)
     # print("is_free = %s" % str(has_liberties))
@@ -100,24 +108,22 @@ def is_free(row, col, board, visited):
     pos_right = (row, col + 1)
     positions = [pos_above, pos_below, pos_left, pos_right]
 
-    # remove positions not on board, i.e. all pos will be valid thereafter
+    # remove positions not on board, i.e. all pos in list positions will be valid thereafter
     for pos in positions:
-        if on_board(pos) == False:
+        if on_board(pos) is False:
             positions.remove(pos)
-
-    for pos in positions:
-        # if pos does not hold stone then it is a liberty
-        if is_stone(pos, board) == False:
+        elif is_stone(pos, board) is False:
+            # if pos is on the board and does not hold stone then it is a liberty
             has_liberties = True
+            return has_liberties
 
     for pos in positions:
-        if has_liberties == True:
-            break
-        if on_board(pos) and pos not in visited:
-            if is_stone(pos, board) and same_colour(pos, (row, col), board):
-                visited.append(pos)
-                # input("pos: %d %d" % (row - 1, col))
-                has_liberties = is_free(pos[0], pos[1], board, visited)
+        if same_colour((row, col), pos, board) and pos not in visited:
+            visited.append(pos)
+            # input("pos: %d %d" % (row - 1, col))
+            has_liberties = is_free(pos[0], pos[1], board, visited)
+            if has_liberties is True:
+                break
 
     return has_liberties
 
@@ -167,16 +173,6 @@ def is_free(row, col, board, visited):
 class Stone(object):
     def __init__(self, symbol):
         self.symbol = symbol
-        self.num_liberties = 0
-
-    def set_liberties(self, row, col):
-        if row == 0 and col == 0 or row == 0 and col == 18 or \
-                row == 18 and col == 0 or row == 18 and col == 18:
-            self.num_liberties = 2
-        elif row == 0 or col == 0 or row == 18 or col == 18:
-            self.num_liberties = 3
-        else:
-            self.num_liberties = 4
 
 
 def create_stone_list(num_stones, symbol):
@@ -265,24 +261,29 @@ print("\n\n\n")
 print("Hello! Welcome to Go! Please start now.")
 
 while black.black_stones_left > 0 and white.white_stones_left > 0:
-    print_board(board)
+    if __debug__:
+        print_board(game_board)
     print("Player 1's turn. (%d stones left, %d stone(s) captured)" % (black.black_stones_left, black.stones_capt))
-    black.make_move(board)
-    print_board(board)
+    black.make_move(game_board)
+    if __debug__:
+        print_board(game_board)
     print("Player 2's turn. (%d stones left, %d stone(s) captured)" % (white.white_stones_left, white.stones_capt))
-    white.make_move(board)
+    white.make_move(game_board)
 
 while black.black_stones_left > 0:
-    print_board(board)
+    if __debug__:
+        print_board(game_board)
     print("Player 1's turn. (%d stones left, %d stone(s) captured)" % (black.black_stones_left, black.stones_capt))
-    black.make_move(board)
+    black.make_move(game_board)
 
 while white.white_stones_left > 0:
-    print_board(board)
+    if __debug__:
+        print_board(game_board)
     print("Player 2's turn. (%d stones left, %d stone(s) captured)" % (white.white_stones_left, white.stones_capt))
-    white.make_move(board)
+    white.make_move(game_board)
 
-print_board(board)
+if __debug__:
+    print_board(game_board)
 
 if black.stones_capt == white.stones_capt:
     print("Congratulations, you have tied")
