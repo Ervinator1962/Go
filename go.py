@@ -45,7 +45,7 @@ def same_colour(pos1, pos2, board):
 
 
 def remove_stones(coordinate_list, board, stones_played_list):
-    # TODO: fix stones_played_list
+    # TODO: Check to see if stones_played_list is working properly
     for (row, col) in coordinate_list:
         # indicate the current round's captured stones with '.'
         board[row][col] = "."
@@ -61,15 +61,12 @@ def remove_capture_indicators(board):
                 board[i][j] = "+"
 
 
-# TODO: Add visited to parent function of check liberties
-# TODO: Edit, cannot do above since need new visited list containing objects to delete every new call to function.
 # TODO: Check stones_played_list
 def check_liberties(pos, board, stones_played_list):
     assert on_board(pos) is True, "Position does not lie on the board"
     # print("New src = %d %d" % (row, col))
     if is_stone(pos, board) is False:
         return 0
-    # TODO: change assignment operator to .append
     visited = [pos]
     has_liberties = is_free(pos, board, visited)
     # print("is_free = %s" % str(has_liberties))
@@ -200,6 +197,8 @@ def is_valid_coordinates(text):
 
 
 class Player(object):
+    # TODO: Work out a way to count and change the variables between black and white so they don't have to be
+    # TODO: class variables.
     white_stones_played = []
     black_stones_played = []
     white_stones_left = 180
